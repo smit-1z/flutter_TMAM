@@ -8,14 +8,14 @@ class TimePickerWidget extends StatefulWidget {
 }
 
 class _TimePickerWidgetState extends State<TimePickerWidget> {
-  TimeOfDay time;
+  TimeOfDay? time;
 
   String getText() {
     if (time == null) {
       return 'Select Time';
     } else {
-      final hours = time.hour.toString().padLeft(2, '0');
-      final minutes = time.minute.toString().padLeft(2, '0');
+      final hours = time!.hour.toString().padLeft(2, '0');
+      final minutes = time!.minute.toString().padLeft(2, '0');
       String t_time = '$hours:$minutes';
       print(t_time);
       return '$hours:$minutes';

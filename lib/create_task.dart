@@ -98,7 +98,7 @@ class _MainPageState extends State<MainPage> {
                 Container(
                   child: TextFormField(
                     validator: (input) {
-                      if (input.isEmpty) return 'Enter task';
+                      if (input!.isEmpty) return 'Enter task';
                     },
                     controller: myController,
 
@@ -135,7 +135,7 @@ class _MainPageState extends State<MainPage> {
                       selectedColor: Colors.white,
                       unSelectedColor: Colors.black,
                       textStyle: TextStyle(fontSize: 16)),
-                  radioButtonValue: (value) {
+                  radioButtonValue: (dynamic value) {
                     print(value);
                   },
                   selectedColor: Theme.of(context).accentColor,

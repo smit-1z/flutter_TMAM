@@ -1,5 +1,12 @@
+import 'package:authentification/Controllers/authentication_controller.dart';
+import 'package:authentification/Controllers/providers/user_provider.dart';
+import 'package:authentification/Controllers/user_controller.dart';
+import 'package:authentification/models/user_model.dart';
+import 'package:authentification/utils/constants.dart';
+import 'package:authentification/utils/my_print.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'SignUp.dart';
 
 class Login extends StatefulWidget {
@@ -11,7 +18,7 @@ class _LoginState extends State<Login> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  String _email, _password;
+  String? _email, _password;
 
   checkAuthentification() async {
     _auth.authStateChanges().listen((user) {
@@ -23,6 +30,10 @@ class _LoginState extends State<Login> {
     });
   }
 
+  navigateToSignUp() async {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => SignUp()));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -30,26 +41,29 @@ class _LoginState extends State<Login> {
   }
 
   login() async {
-    if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
 
       try {
         await _auth.signInWithEmailAndPassword(
-            email: _email, password: _password);
+            email: _email!, password: _password!);
+
+
+
       } catch (e) {
-        showError(e.message);
+        showError(e.toString());
         print(e);
       }
     }
   }
 
-  showError(String errormessage) {
+  showError(String? errormessage) {
     showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text('ERROR'),
-            content: Text(errormessage),
+            content: Text(errormessage!),
             actions: <Widget>[
               FlatButton(
                   onPressed: () {
@@ -61,9 +75,71 @@ class _LoginState extends State<Login> {
         });
   }
 
-  navigateToSignUp() async {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => SignUp()));
+  bool isSignIningInWithGoogle  = false;
+
+  void signInWithGoogle() async {
+    if (isSignIningInWithGoogle) return;
+
+    String type = "GOOGLE";
+
+    setState(() {
+      isSignIningInWithGoogle = true;
+    });
+
+    User? user = await AuthenticationController().signInWithGoogle(context);
+
+    if (user != null) {
+      onSuccess(user, LOGIN_TYPE_GOOGLE);
+    } else {
+      setState(() {
+        isSignIningInWithGoogle = false;
+      });
+    }
   }
+
+  Future<void> onSuccess(User user, String loginType) async {
+    MyPrint.printOnConsole("Login Screen OnSuccess called");
+
+    String type = "";
+    if (loginType == LOGIN_TYPE_EMAIL)
+      type = "EMAIL";
+    else if (loginType == LOGIN_TYPE_GOOGLE)
+      type = "GOOGLE";
+
+    UserProvider userProvider =
+    Provider.of<UserProvider>(context, listen: false);
+    userProvider.userid = user.uid;
+    userProvider.firebaseUser = user;
+
+    MyPrint.printOnConsole("Email:${user.email}");
+    MyPrint.printOnConsole("Mobile:${user.phoneNumber}");
+
+    bool isExist =
+    await UserController().isUserExist(context, userProvider.userid!);
+
+    if (isExist) {
+      print("User Exist");
+
+     {
+
+        Navigator.pushReplacementNamed(context, "/");
+
+      }
+    } else {
+      print("User Not Exist");
+
+      await UserController().createNewUser(context, loginType: loginType);
+
+      MyPrint.logOnConsole("Created:${userProvider.userModel}");
+      Navigator.pushNamedAndRemoveUntil(
+          context, "/", (route) => false);
+    }
+
+    setState(() {
+      isSignIningInWithGoogle = false;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +163,7 @@ class _LoginState extends State<Login> {
                     Container(
                       child: TextFormField(
                           validator: (input) {
-                            if (input.isEmpty) return 'Enter Email';
+                            if (input!.isEmpty) return 'Enter Email';
                           },
                           decoration: InputDecoration(
                               labelText: 'Email',
@@ -97,7 +173,7 @@ class _LoginState extends State<Login> {
                     Container(
                       child: TextFormField(
                           validator: (input) {
-                            if (input.length < 6)
+                            if (input!.length < 6)
                               return 'Provide Minimum 6 Character';
                           },
                           decoration: InputDecoration(

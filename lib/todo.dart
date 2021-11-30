@@ -14,8 +14,8 @@ void main() => runApp(MaterialApp(
 
 
 class MyApp1 extends StatefulWidget {
-  final String value;
-  MyApp1({Key key, this.value}) : super (key: key);
+  final String? value;
+  MyApp1({Key? key, this.value}) : super (key: key);
   @override
   _MyAppState createState() => _MyAppState();
 

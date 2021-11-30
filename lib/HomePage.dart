@@ -28,7 +28,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  User user;
+  User? user;
   bool isloggedin = false;
 
   checkAuthentification() async {
@@ -40,7 +40,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   getUser() async {
-    User firebaseUser = _auth.currentUser;
+    User? firebaseUser = _auth.currentUser;
     await firebaseUser?.reload();
     firebaseUser = _auth.currentUser;
 
@@ -89,7 +89,7 @@ class _HomePageState extends State<HomePage> {
 
                 Container(
                   child: Text(
-                    "Hello ${user.displayName} ",
+                    "Hello ${user!.displayName} ",
                     style:
                         TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
                   ),

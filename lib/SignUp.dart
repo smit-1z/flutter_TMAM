@@ -11,7 +11,7 @@ class _SignUpState extends State<SignUp> {
   FirebaseAuth _auth = FirebaseAuth.instance;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  String _name, _email, _password;
+  String? _name, _email, _password;
 
   checkAuthentication() async {
     _auth.authStateChanges().listen((user) async {
@@ -28,34 +28,34 @@ class _SignUpState extends State<SignUp> {
   }
 
   signUp() async {
-    if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
 
       try {
         UserCredential user = await _auth.createUserWithEmailAndPassword(
-            email: _email, password: _password);
+            email: _email!, password: _password!);
         if (user != null) {
           // UserUpdateInfo updateuser = UserUpdateInfo();
           // updateuser.displayName = _name;
           //  user.updateProfile(updateuser);
-          await _auth.currentUser.updateProfile(displayName: _name);
+          await _auth.currentUser!.updateProfile(displayName: _name);
           // await Navigator.pushReplacementNamed(context,"/") ;
 
         }
       } catch (e) {
-        showError(e.message);
+        showError(e.toString());
         print(e);
       }
     }
   }
 
-  showError(String errormessage) {
+  showError(String? errormessage) {
     showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text('ERROR'),
-            content: Text(errormessage),
+            content: Text(errormessage!),
             actions: <Widget>[
               FlatButton(
                   onPressed: () {
@@ -89,7 +89,7 @@ class _SignUpState extends State<SignUp> {
                     Container(
                       child: TextFormField(
                           validator: (input) {
-                            if (input.isEmpty) return 'Enter Name';
+                            if (input!.isEmpty) return 'Enter Name';
                           },
                           decoration: InputDecoration(
                             labelText: 'Name',
@@ -100,7 +100,7 @@ class _SignUpState extends State<SignUp> {
                     Container(
                       child: TextFormField(
                           validator: (input) {
-                            if (input.isEmpty) return 'Enter Email';
+                            if (input!.isEmpty) return 'Enter Email';
                           },
                           decoration: InputDecoration(
                               labelText: 'Email',
@@ -110,7 +110,7 @@ class _SignUpState extends State<SignUp> {
                     Container(
                       child: TextFormField(
                           validator: (input) {
-                            if (input.length < 6)
+                            if (input!.length < 6)
                               return 'Provide Minimum 6 Character';
                           },
                           decoration: InputDecoration(
