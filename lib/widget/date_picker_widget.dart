@@ -8,13 +8,13 @@ class DatePickerWidget extends StatefulWidget {
 }
 
 class _DatePickerWidgetState extends State<DatePickerWidget> {
-  DateTime date;
+  DateTime? date;
 
   String getText() {
     if (date == null) {
       return 'Select Date';
     } else {
-      return DateFormat('MM/dd/yyyy').format(date);
+      return DateFormat('MM/dd/yyyy').format(date!);
       // return '${date.month}/${date.day}/${date.year}';
     }
   }

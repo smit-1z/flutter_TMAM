@@ -8,13 +8,13 @@ class DateRangePickerWidget extends StatefulWidget {
 }
 
 class _DateRangePickerWidgetState extends State<DateRangePickerWidget> {
-  DateTimeRange dateRange;
+  DateTimeRange? dateRange;
 
   String getFrom() {
     if (dateRange == null) {
       return 'From';
     } else {
-      return DateFormat('MM/dd/yyyy').format(dateRange.start);
+      return DateFormat('MM/dd/yyyy').format(dateRange!.start);
     }
   }
 
@@ -22,7 +22,7 @@ class _DateRangePickerWidgetState extends State<DateRangePickerWidget> {
     if (dateRange == null) {
       return 'Until';
     } else {
-      return DateFormat('MM/dd/yyyy').format(dateRange.end);
+      return DateFormat('MM/dd/yyyy').format(dateRange!.end);
     }
   }
 
