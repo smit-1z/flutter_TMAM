@@ -7,6 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
+
 
 class UserController {
 
@@ -64,6 +66,7 @@ class UserController {
         await batch.commit().whenComplete(() async {
           FirestoreController().firestore.collection(USERS_COLLECTION).doc(user.uid).get().then((DocumentSnapshot<Map<String, dynamic>> documentSnapshot) {
             UserModel userModel = UserModel.fromMap(documentSnapshot.data() ?? {});
+          userProvider.userModel = userModel;
           });
         });
 
@@ -76,5 +79,55 @@ class UserController {
       MyPrint.printOnConsole("Error in UserController().createUser():${e}");
     }
   }
+
+  Future<void> updateUser(BuildContext context,UserModel userModel) async {
+    try {
+
+
+      // if(user != null) {
+      //   UserModel userModel = UserModel(
+      //       id: user.uid,
+      //       name: user.displayName,
+      //       email: user.email
+      //
+      //   );
+
+        Map<String, dynamic> data = userModel.toMap();
+        data["createdTime"] = FieldValue.serverTimestamp();
+
+
+      await FirestoreController().firestore.collection(USERS_COLLECTION).doc(userModel.id).update(userModel.toMap());
+
+        //MyPrint.logOnConsole("User:${userProvider.userModel}");
+
+        MyPrint.printOnConsole("update user ");
+      }
+    // }
+    catch(e) {
+      MyPrint.printOnConsole("Error in UserController().createUser():${e}");
+    }
+  }
+
+  Future<UserModel> getUserList(context) async {
+    // var venueData = await FirestoreController()
+    //     .firestore
+    //     .collection(VENUES_COLLECTION)
+    //     .get();
+    // return venueData;
+    UserProvider userProvider  =Provider.of<UserProvider>(context,listen: false);
+    firestore.DocumentReference collection =
+    firestore.FirebaseFirestore.instance.collection(USERS_COLLECTION).doc(userProvider.userid);
+    var data = await collection.get();
+    UserModel userData = UserModel.fromMap( data.data() as Map<String, dynamic>);
+    print( userData);
+    // data.docs.forEach((e) {
+    //   userData = ();
+    // });
+    print(userData.toMap());
+
+    return userData;
+  }
+
+
 
 }

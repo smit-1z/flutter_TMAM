@@ -1,6 +1,7 @@
 import 'package:authentification/Controllers/authentication_controller.dart';
 import 'package:authentification/Controllers/providers/user_provider.dart';
 import 'package:authentification/Controllers/user_controller.dart';
+import 'package:authentification/models/user_model.dart';
 import 'package:authentification/utils/constants.dart';
 import 'package:authentification/utils/my_print.dart';
 import 'package:firebase_auth/firebase_auth.dart';
