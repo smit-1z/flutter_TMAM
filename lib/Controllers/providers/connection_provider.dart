@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:authentification/utils/my_print.dart';
 import 'package:connectivity/connectivity.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 
 //To Detect Changes in Connection
 class ConnectionProvider extends ChangeNotifier {

@@ -1,7 +1,11 @@
+import 'package:authentification/Controllers/firestore_controller.dart';
 import 'package:authentification/Controllers/user_controller.dart';
 import 'package:authentification/create_task.dart';
 import 'package:authentification/models/task_model.dart';
 import 'package:authentification/models/user_model.dart';
+import 'package:authentification/utils/constants.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(MaterialApp(
@@ -26,7 +30,7 @@ class _MyAppState extends State<MyApp1> {
   List todos = [];
 
   bool isloggedin = true;
-  UserModel userModelList = UserModel();
+  UserModel? userModelList;
 
   bool isLoading = false;
 
@@ -37,7 +41,7 @@ class _MyAppState extends State<MyApp1> {
     UserController userController = UserController();
     userModelList = await userController.getUserList(context);
 
-    print(userModelList.toMap());
+    // print(userModelList!.toMap());
 
     setState(() {
       isLoading = false;
@@ -63,11 +67,15 @@ class _MyAppState extends State<MyApp1> {
     return Scaffold(
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.red,
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            bool isTrue = await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => MainPage()),
             );
+            print(isTrue);
+            if (isTrue) {
+              getTodoList();
+            }
           },
           child: Icon(Icons.add),
         ),
@@ -75,11 +83,17 @@ class _MyAppState extends State<MyApp1> {
           backgroundColor: Theme.of(context).primaryColor,
           title: Text("Todo"),
         ),
-        body: todoView());
+        body: userModelList == null
+            ? Container(
+                child: Center(
+                  child: Text("No Todos"),
+                ),
+              )
+            : todoView());
   }
 
   Widget todoView() {
-    return userModelList.taskList!.length == 0
+    return userModelList!.taskList!.length == 0
         ? Center(
             child: Container(
             child: Text("No Todos"),
@@ -87,26 +101,63 @@ class _MyAppState extends State<MyApp1> {
         : todoListView();
   }
 
-  Widget todoListView(){
+  Widget todoListView() {
     return ListView.builder(
-      padding: EdgeInsets.all(10),
-        itemCount: userModelList.taskList!.length,
-        itemBuilder: (BuildContext context, int index){
-      return todoItemView(userModelList.taskList![index]);
-    });
+        padding: EdgeInsets.all(10),
+        itemCount: userModelList!.taskList!.length,
+        itemBuilder: (BuildContext context, int index) {
+          return todoItemView(userModelList!.taskList![index], userModelList!);
+        });
   }
 
-  Widget todoItemView(TaskModels taskModels){
+  Widget todoItemView(TaskModels taskModels, UserModel userModel) {
     return Container(
-
       child: Card(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10,vertical: 20),
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
           child: Row(
             children: [
-              Expanded(child: Text("${taskModels.task ?? ""}",style: TextStyle(color: Colors.black),))
-              ,Icon(Icons.delete)
-              ],
+              Expanded(
+                  child: Text(
+                "${taskModels.task ?? ""}",
+                style: TextStyle(color: Colors.black),
+              )),
+              InkWell(
+                  onTap: () async {
+                    bool? isTrue = await showDialog(
+                        context: context,
+                        builder: (context) {
+                          return CupertinoAlertDialog(
+                            title: Text("Delete"),
+                            content: Text("Are you sure you want to delete?"),
+                            actions: [
+                              CupertinoButton(
+                                  child: Text("No"),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false)),
+                              CupertinoButton(
+                                  child: Text("Yes"),
+                                  onPressed: () => Navigator.pop(context, true))
+                            ],
+                          );
+                        });
+                    if (isTrue == true) {
+                      await FirestoreController()
+                          .firestore
+                          .collection(USERS_COLLECTION)
+                          .doc(userModel.id)
+                          .update({
+                        "tasks": FieldValue.arrayRemove([taskModels.toMap()])
+                      });
+                      userModelList!.taskList!.remove(taskModels);
+
+
+
+                      setState(() {});
+                    }
+                  },
+                  child: Icon(Icons.delete))
+            ],
           ),
         ),
       ),

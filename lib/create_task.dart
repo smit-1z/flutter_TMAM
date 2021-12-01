@@ -4,6 +4,7 @@ import 'package:authentification/main.dart';
 import 'package:authentification/models/task_model.dart';
 import 'package:authentification/models/user_model.dart';
 import 'package:authentification/todo.dart';
+import 'package:authentification/widget/modal_progress_hud.dart';
 import 'package:custom_radio_grouped_button/custom_radio_grouped_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -112,13 +113,18 @@ class _MainPageState extends State<MainPage> {
       return '$hours:$minutes';
     }
   }
+  bool isLoading = false;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        bottomNavigationBar: buildBottomBar(),
-        body: mainBody(),
-      );
+  Widget build(BuildContext context) => ModalProgressHUD(
+    inAsyncCall: isLoading,
+    progressIndicator: CircularProgressIndicator(),
+    child: Scaffold(
+          backgroundColor: Theme.of(context).primaryColor,
+          bottomNavigationBar: buildBottomBar(),
+          body: mainBody(),
+        ),
+  );
 
   Widget mainBody() {
     return Padding(
@@ -185,6 +191,9 @@ class _MainPageState extends State<MainPage> {
             RaisedButton(
               padding: EdgeInsets.fromLTRB(50, 10, 50, 10),
               onPressed: () async {
+                setState(() {
+                  isLoading = true;
+                });
                 print("$sendingDate  $sendingtime ");
                 TaskModels tasksModel = TaskModels(
                     date: sendingDate,
@@ -198,7 +207,7 @@ class _MainPageState extends State<MainPage> {
                 UserModel userModel = userProvider.userModel!;
                 userModel.taskList!.addAll([tasksModel]);
 
-print(userModel.toMap());
+              print(userModel.toMap());
                 UserController userController= UserController();
                 //
                await userController.updateUser(context, userModel);
@@ -208,6 +217,11 @@ print(userModel.toMap());
                 //     new MyApp1(value: myController.text),
                 // );
                 // Navigator.of(context).push(route);
+                setState(() {
+                  isLoading = false;
+                });
+                Navigator.pop(context,true);
+
               },
               child: Text('Add Task',
                   style: TextStyle(

@@ -4,6 +4,7 @@ import 'package:authentification/Controllers/user_controller.dart';
 import 'package:authentification/models/user_model.dart';
 import 'package:authentification/utils/constants.dart';
 import 'package:authentification/utils/my_print.dart';
+import 'package:authentification/utils/shared_pref_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -87,7 +88,7 @@ class _LoginState extends State<Login> {
     });
 
     User? user = await AuthenticationController().signInWithGoogle(context);
-
+      print(user);
     if (user != null) {
       onSuccess(user, LOGIN_TYPE_GOOGLE);
     } else {
@@ -110,8 +111,10 @@ class _LoginState extends State<Login> {
     Provider.of<UserProvider>(context, listen: false);
     userProvider.userid = user.uid;
     userProvider.firebaseUser = user;
+    SharedPrefManager prefManager = SharedPrefManager();
+   await prefManager.setString(USERID, user.uid);
 
-    MyPrint.printOnConsole("Email:${user.email}");
+    MyPrint.printOnConsole("Email:${user.uid}");
     MyPrint.printOnConsole("Mobile:${user.phoneNumber}");
 
     bool isExist =
