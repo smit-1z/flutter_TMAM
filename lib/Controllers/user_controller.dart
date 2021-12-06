@@ -3,6 +3,7 @@ import 'package:authentification/Controllers/providers/user_provider.dart';
 import 'package:authentification/models/user_model.dart';
 import 'package:authentification/utils/constants.dart';
 import 'package:authentification/utils/my_print.dart';
+import 'package:authentification/utils/shared_pref_manager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -108,25 +109,67 @@ class UserController {
     }
   }
 
-  Future<UserModel> getUserList(context) async {
+  Future<UserModel?> getUserList(context) async {
     // var venueData = await FirestoreController()
     //     .firestore
     //     .collection(VENUES_COLLECTION)
     //     .get();
     // return venueData;
-    UserProvider userProvider  =Provider.of<UserProvider>(context,listen: false);
-    firestore.DocumentReference collection =
-    firestore.FirebaseFirestore.instance.collection(USERS_COLLECTION).doc(userProvider.userid);
-    var data = await collection.get();
-    UserModel userData = UserModel.fromMap( data.data() as Map<String, dynamic>);
-    print( userData);
+    UserModel? userData  = UserModel();
+    SharedPrefManager prefManager = SharedPrefManager();
+    String? userid = await prefManager.getString(USERID);
+
+    UserProvider userProvider  = Provider.of<UserProvider>(context,listen: false);
+    print("User id : $userid");
+    // DocumentSnapshot<Map<String, dynamic>> documentSnapshot = await FirestoreController().firestore.collection("users").doc(userid).get();
+    // Map<String, dynamic>? data = documentSnapshot.data();
+    // print(data);
+    // if(data != null){
+    //   userData = UserModel.fromMap(data);
+    //   print( userData);
+    //
+    // } else {
+    //   userData = null;
+    // }
+    Query<Map<String, dynamic>> query = FirestoreController().firestore.collection(USERS_COLLECTION).where("id",isEqualTo:userid );
+// DocumentSnapshot<Map<String, dynamic>> doc  =query.get();
+    QuerySnapshot<Map<String, dynamic>> querySnapshot = await query.get().catchError((error) {
+      print(error);
+    } );
+    MyPrint.printOnConsole("Snapshots:${querySnapshot.docs}");
+
+    if(querySnapshot.docs.length != 0){
+
+      UserModel userModel = UserModel.fromMap(querySnapshot.docs.first.data());
+      userData = userModel;
+      // print(userModel);
+      userProvider.userModel = userModel;
+      // userProvider.serchedUserModel =  UserModel.fromMap(querySnapshot.docs.first.data());
+    } else {
+      userData = null;
+    }
+
     // data.docs.forEach((e) {
     //   userData = ();
     // });
-    print(userData.toMap());
+    // print(userData!.toMap());
 
     return userData;
   }
+
+  //To Get UserData and store it in UserProvider
+  // Future<void>? getUserData(BuildContext context, String uid) async {
+  //   DocumentSnapshot<Map<String, dynamic>> documentSnapshot = await FirestoreController().firestore.collection(USERS_COLLECTION).doc(uid).get();
+  //   if(documentSnapshot.exists) {
+  //     UserProvider userProvider = Provider.of<UserProvider>(context, listen: false);
+  //     Map<String, dynamic>? data = documentSnapshot.data();
+  //     if(data != null && data.isNotEmpty) {
+  //       if(userProvider.userModel == null) userProvider.userModel = UserModel.fromMap(data);
+  //       else userProvider.userModel?.updateFromMap(data);
+  //       userProvider.notifyListeners();
+  //     }
+  //   }
+  // }
 
 
 

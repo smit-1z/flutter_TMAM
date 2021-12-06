@@ -5,5 +5,5 @@ import 'package:flutter/foundation.dart';
 class UserProvider extends ChangeNotifier{
   User? firebaseUser;
   String? userid;
-  UserModel? userModel;
+  UserModel? userModel = UserModel();
 }

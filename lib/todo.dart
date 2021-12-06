@@ -1,8 +1,13 @@
+import 'package:authentification/Controllers/firestore_controller.dart';
 import 'package:authentification/Controllers/user_controller.dart';
 import 'package:authentification/create_task.dart';
 import 'package:authentification/models/task_model.dart';
 import 'package:authentification/models/user_model.dart';
+import 'package:authentification/utils/constants.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 void main() => runApp(MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -26,7 +31,7 @@ class _MyAppState extends State<MyApp1> {
   List todos = [];
 
   bool isloggedin = true;
-  UserModel userModelList = UserModel();
+  UserModel? userModelList;
 
   bool isLoading = false;
 
@@ -37,7 +42,7 @@ class _MyAppState extends State<MyApp1> {
     UserController userController = UserController();
     userModelList = await userController.getUserList(context);
 
-    print(userModelList.toMap());
+    // print(userModelList!.toMap());
 
     setState(() {
       isLoading = false;
@@ -61,13 +66,18 @@ class _MyAppState extends State<MyApp1> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        resizeToAvoidBottomInset: false,
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.red,
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            bool isTrue = await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => MainPage()),
             );
+            print(isTrue);
+            if (isTrue) {
+              getTodoList();
+            }
           },
           child: Icon(Icons.add),
         ),
@@ -75,11 +85,17 @@ class _MyAppState extends State<MyApp1> {
           backgroundColor: Theme.of(context).primaryColor,
           title: Text("Todo"),
         ),
-        body: todoView());
+        body: userModelList == null
+            ? Container(
+                child: Center(
+                  child: Text("No Todos"),
+                ),
+              )
+            : todoView());
   }
 
   Widget todoView() {
-    return userModelList.taskList!.length == 0
+    return userModelList!.taskList!.length == 0
         ? Center(
             child: Container(
             child: Text("No Todos"),
@@ -87,26 +103,228 @@ class _MyAppState extends State<MyApp1> {
         : todoListView();
   }
 
-  Widget todoListView(){
+  Widget todoListView() {
     return ListView.builder(
-      padding: EdgeInsets.all(10),
-        itemCount: userModelList.taskList!.length,
-        itemBuilder: (BuildContext context, int index){
-      return todoItemView(userModelList.taskList![index]);
-    });
+        padding: EdgeInsets.all(10),
+        itemCount: userModelList!.taskList!.length,
+        itemBuilder: (BuildContext context, int index) {
+          return todoItemView(userModelList!.taskList![index], userModelList!);
+        });
   }
 
-  Widget todoItemView(TaskModels taskModels){
-    return Container(
+  GlobalKey key = GlobalKey();
 
-      child: Card(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10,vertical: 20),
-          child: Row(
-            children: [
-              Expanded(child: Text("${taskModels.task ?? ""}",style: TextStyle(color: Colors.black),))
-              ,Icon(Icons.delete)
+  Widget todoItemView(TaskModels taskModels, UserModel userModel) {
+    return Slidable(
+      endActionPane: ActionPane(
+        // A motion is a widget used to control how the pane animates.
+        motion: const ScrollMotion(),
+        closeThreshold: 0.9,
+
+        // A pane can dismiss the Slidable.
+        dismissible: DismissiblePane(onDismissed: () async {
+          bool? isTrue = await showDialog(
+              context: context,
+              builder: (context) {
+                return CupertinoAlertDialog(
+                  title: Text("Delete"),
+                  content: Text("Are you sure you want to delete?"),
+                  actions: [
+                    CupertinoButton(
+                        child: Text("No"),
+                        onPressed: () => Navigator.pop(context, false)),
+                    CupertinoButton(
+                        child: Text("Yes"),
+                        onPressed: () => Navigator.pop(context, true))
+                  ],
+                );
+              });
+          if (isTrue == true) {
+            await FirestoreController()
+                .firestore
+                .collection(USERS_COLLECTION)
+                .doc(userModel.id)
+                .update({
+              "tasks": FieldValue.arrayRemove([taskModels.toMap()])
+            });
+            userModelList!.taskList!.remove(taskModels);
+
+            setState(() {});
+          }
+        }),
+
+        // All actions are defined in the children parameter.
+        children: [
+          // A SlidableAction can have an icon and/or a label.
+          SlidableAction(
+            onPressed: (BuildContext? context) async {
+              bool? isTrue = await showDialog(
+                  context: context!,
+                  builder: (context) {
+                    return CupertinoAlertDialog(
+                      title: Text("Delete"),
+                      content: Text("Are you sure you want to delete?"),
+                      actions: [
+                        CupertinoButton(
+                            child: Text("No"),
+                            onPressed: () => Navigator.pop(context, false)),
+                        CupertinoButton(
+                            child: Text("Yes"),
+                            onPressed: () => Navigator.pop(context, true))
+                      ],
+                    );
+                  });
+              if (isTrue == true) {
+                await FirestoreController()
+                    .firestore
+                    .collection(USERS_COLLECTION)
+                    .doc(userModel.id)
+                    .update({
+                  "tasks": FieldValue.arrayRemove([taskModels.toMap()])
+                });
+                userModelList!.taskList!.remove(taskModels);
+
+                setState(() {});
+              }
+            },
+            backgroundColor: Color(0xFFFE4A49),
+            foregroundColor: Colors.white,
+            icon: Icons.delete,
+            label: 'Delete',
+          ),
+        ],
+      ),
+      // closeOnScroll: false,
+
+      startActionPane: ActionPane(
+        // A motion is a widget used to control how the pane animates.
+        motion: const ScrollMotion(),
+
+        // A pane can dismiss the Slidable.
+        dismissible: DismissiblePane(onDismissed: () async {
+          // Navigator.pop(context);
+        }),
+
+        // All actions are defined in the children parameter.
+        children: [
+          // A SlidableAction can have an icon and/or a label.
+          SlidableAction(
+            autoClose: false,
+            onPressed: (BuildContext? context) async {
+              TextEditingController controller = TextEditingController();
+              controller.text = taskModels.task!;
+              String value = await showDialog(
+                // isScrollControlled: true,
+                context: context!,
+                builder: (BuildContext context) {
+                  return CupertinoAlertDialog(
+                    title: Text("Edit tasks"),
+                    actions: [
+                      CupertinoButton(child: Text("Cancel"), onPressed: () {}),
+                      CupertinoButton(child: Text("Confirm"), onPressed: () async {
+                        await FirestoreController()
+                            .firestore
+                            .collection(USERS_COLLECTION)
+                            .doc(userModel.id)
+                            .update({
+                          "tasks": FieldValue.arrayRemove([taskModels.toMap()])
+                        });
+                        taskModels.task = controller.text;
+
+                        setState(() {
+
+                        });
+                        Navigator.pop(context,controller.text);
+                        FocusScope.of(context).requestFocus(new FocusNode());
+
+                      })
+                    ],
+                    content: Material(
+                      color: Colors.transparent,
+                      child: Column(
+                        children: [
+                          Text("Are you sure you want to edit this task ?"),
+                          TextFormField(
+                            controller: controller,
+                            decoration:
+                                InputDecoration(border: OutlineInputBorder()),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+              if(value != null){
+
+                await FirestoreController()
+                    .firestore
+                    .collection(USERS_COLLECTION)
+                    .doc(userModel.id)
+                    .update({
+                  "tasks": FieldValue.arrayUnion([taskModels.toMap()])
+                });
+              }
+            },
+            backgroundColor: Color(0xFFFE4A49),
+            foregroundColor: Colors.white,
+            icon: Icons.edit,
+            label: 'Edit',
+          ),
+        ],
+      ),
+
+      // Specify a key if the Slidable is dismissible.
+
+      key: const ValueKey(0),
+
+      child: Container(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+            child: Row(
+              children: [
+                Expanded(
+                    child: Text(
+                  "${taskModels.task ?? ""}",
+                  style: TextStyle(color: Colors.black),
+                )),
+                InkWell(
+                    onTap: () async {
+                      bool? isTrue = await showDialog(
+                          context: context,
+                          builder: (context) {
+                            return CupertinoAlertDialog(
+                              title: Text("Delete"),
+                              content: Text("Are you sure you want to delete?"),
+                              actions: [
+                                CupertinoButton(
+                                    child: Text("No"),
+                                    onPressed: () =>
+                                        Navigator.pop(context, false)),
+                                CupertinoButton(
+                                    child: Text("Yes"),
+                                    onPressed: () =>
+                                        Navigator.pop(context, true))
+                              ],
+                            );
+                          });
+                      if (isTrue == true) {
+                        await FirestoreController()
+                            .firestore
+                            .collection(USERS_COLLECTION)
+                            .doc(userModel.id)
+                            .update({
+                          "tasks": FieldValue.arrayRemove([taskModels.toMap()])
+                        });
+                        userModelList!.taskList!.remove(taskModels);
+
+                        setState(() {});
+                      }
+                    },
+                    child: Icon(Icons.delete))
               ],
+            ),
           ),
         ),
       ),
